@@ -1,19 +1,3 @@
-module ActionView # :nodoc:
-  class Base # :nodoc:
-    def render_template_with_markaby_line_support(template_extension, template, file_path = nil, local_assigns = {})
-      handler = self.class.handler_for_extension(template_extension)
-      if (handler == Markaby::Rails::ActionViewTemplateHandler)
-        template ||= read_template_file(file_path, template_extension)
-        handler.new(self).render(template, local_assigns, file_path)
-      else
-        compile_and_render_template(@@template_handlers[template_extension.to_sym], template, file_path, local_assigns)
-        render_template_without_markaby_line_support(template_extension, template, file_path, local_assigns)
-      end
-    end
-    alias_method_chain :render_template, :markaby_line_support
-  end
-end
-
 module Markaby
   module Rails
     # Markaby helpers for Rails.
@@ -27,14 +11,10 @@ module Markaby
       end
     end
 
-    class ActionViewTemplateHandler # :nodoc:
-      def initialize(action_view)
-        @action_view = action_view
-      end
-      def render(template, local_assigns, file_path)
-        template = Template.new(template)
-        template.path = file_path
-        template.render(@action_view.assigns.merge(local_assigns), @action_view)
+    class ActionViewTemplateHandler < ActionView::TemplateHandler # :nodoc:
+      def render(template, local_assigns)
+        @markaby_template = Template.new(template)
+        @markaby_template.render(@view.assigns.merge(local_assigns), @view)
       end
     end
       
